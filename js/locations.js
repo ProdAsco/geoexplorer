@@ -1,0 +1,96 @@
+/**
+ * GeoExplorer — Curated Locations with Mapillary Coverage
+ * Each location has lat/lng and a descriptive name.
+ * Selected for places with known Mapillary image availability.
+ */
+const LOCATIONS = [
+    // ═══ EUROPE ═══
+    { lat: 48.8566, lng: 2.3522, name: "Paris", country: "France" },
+    { lat: 48.8738, lng: 2.2950, name: "Arc de Triomphe, Paris", country: "France" },
+    { lat: 43.2965, lng: 5.3698, name: "Marseille", country: "France" },
+    { lat: 45.7640, lng: 4.8357, name: "Lyon", country: "France" },
+    { lat: 51.5074, lng: -0.1278, name: "Londres", country: "Royaume-Uni" },
+    { lat: 51.5014, lng: -0.1419, name: "Buckingham Palace, Londres", country: "Royaume-Uni" },
+    { lat: 52.5200, lng: 13.4050, name: "Berlin", country: "Allemagne" },
+    { lat: 52.5163, lng: 13.3777, name: "Porte de Brandebourg, Berlin", country: "Allemagne" },
+    { lat: 48.2082, lng: 16.3738, name: "Vienne", country: "Autriche" },
+    { lat: 41.3851, lng: 2.1734, name: "Barcelone", country: "Espagne" },
+    { lat: 40.4168, lng: -3.7038, name: "Madrid", country: "Espagne" },
+    { lat: 41.9028, lng: 12.4964, name: "Rome", country: "Italie" },
+    { lat: 45.4408, lng: 12.3155, name: "Venise", country: "Italie" },
+    { lat: 43.7696, lng: 11.2558, name: "Florence", country: "Italie" },
+    { lat: 52.3676, lng: 4.9041, name: "Amsterdam", country: "Pays-Bas" },
+    { lat: 50.8503, lng: 4.3517, name: "Bruxelles", country: "Belgique" },
+    { lat: 47.3769, lng: 8.5417, name: "Zurich", country: "Suisse" },
+    { lat: 59.3293, lng: 18.0686, name: "Stockholm", country: "Suède" },
+    { lat: 55.6761, lng: 12.5683, name: "Copenhague", country: "Danemark" },
+    { lat: 60.1699, lng: 24.9384, name: "Helsinki", country: "Finlande" },
+    { lat: 38.7223, lng: -9.1393, name: "Lisbonne", country: "Portugal" },
+    { lat: 50.0755, lng: 14.4378, name: "Prague", country: "Tchéquie" },
+    { lat: 47.4979, lng: 19.0402, name: "Budapest", country: "Hongrie" },
+    { lat: 44.4268, lng: 26.1025, name: "Bucarest", country: "Roumanie" },
+    { lat: 59.9139, lng: 10.7522, name: "Oslo", country: "Norvège" },
+    { lat: 53.3498, lng: -6.2603, name: "Dublin", country: "Irlande" },
+    { lat: 37.9838, lng: 23.7275, name: "Athènes", country: "Grèce" },
+    { lat: 41.0082, lng: 28.9784, name: "Istanbul", country: "Turquie" },
+
+    // ═══ AMÉRIQUE DU NORD ═══
+    { lat: 40.7128, lng: -74.0060, name: "New York", country: "États-Unis" },
+    { lat: 40.7484, lng: -73.9857, name: "Empire State Building, NYC", country: "États-Unis" },
+    { lat: 37.7749, lng: -122.4194, name: "San Francisco", country: "États-Unis" },
+    { lat: 34.0522, lng: -118.2437, name: "Los Angeles", country: "États-Unis" },
+    { lat: 41.8781, lng: -87.6298, name: "Chicago", country: "États-Unis" },
+    { lat: 25.7617, lng: -80.1918, name: "Miami", country: "États-Unis" },
+    { lat: 47.6062, lng: -122.3321, name: "Seattle", country: "États-Unis" },
+    { lat: 38.9072, lng: -77.0369, name: "Washington D.C.", country: "États-Unis" },
+    { lat: 45.5017, lng: -73.5673, name: "Montréal", country: "Canada" },
+    { lat: 43.6532, lng: -79.3832, name: "Toronto", country: "Canada" },
+    { lat: 49.2827, lng: -123.1207, name: "Vancouver", country: "Canada" },
+    { lat: 19.4326, lng: -99.1332, name: "Mexico City", country: "Mexique" },
+
+    // ═══ AMÉRIQUE DU SUD ═══
+    { lat: -23.5505, lng: -46.6333, name: "São Paulo", country: "Brésil" },
+    { lat: -22.9068, lng: -43.1729, name: "Rio de Janeiro", country: "Brésil" },
+    { lat: -34.6037, lng: -58.3816, name: "Buenos Aires", country: "Argentine" },
+    { lat: -33.4489, lng: -70.6693, name: "Santiago", country: "Chili" },
+    { lat: -12.0464, lng: -77.0428, name: "Lima", country: "Pérou" },
+    { lat: 4.7110, lng: -74.0721, name: "Bogotá", country: "Colombie" },
+
+    // ═══ ASIE ═══
+    { lat: 35.6762, lng: 139.6503, name: "Tokyo", country: "Japon" },
+    { lat: 35.0116, lng: 135.7681, name: "Kyoto", country: "Japon" },
+    { lat: 37.5665, lng: 126.9780, name: "Séoul", country: "Corée du Sud" },
+    { lat: 1.3521, lng: 103.8198, name: "Singapour", country: "Singapour" },
+    { lat: 13.7563, lng: 100.5018, name: "Bangkok", country: "Thaïlande" },
+    { lat: 22.3193, lng: 114.1694, name: "Hong Kong", country: "Chine" },
+    { lat: 31.2304, lng: 121.4737, name: "Shanghai", country: "Chine" },
+    { lat: 39.9042, lng: 116.4074, name: "Pékin", country: "Chine" },
+    { lat: 28.6139, lng: 77.2090, name: "New Delhi", country: "Inde" },
+    { lat: 19.0760, lng: 72.8777, name: "Mumbai", country: "Inde" },
+    { lat: 25.2048, lng: 55.2708, name: "Dubaï", country: "Émirats arabes unis" },
+    { lat: 14.5995, lng: 120.9842, name: "Manille", country: "Philippines" },
+    { lat: -6.2088, lng: 106.8456, name: "Jakarta", country: "Indonésie" },
+    { lat: 3.1390, lng: 101.6869, name: "Kuala Lumpur", country: "Malaisie" },
+
+    // ═══ AFRIQUE ═══
+    { lat: -33.9249, lng: 18.4241, name: "Le Cap", country: "Afrique du Sud" },
+    { lat: -1.2921, lng: 36.8219, name: "Nairobi", country: "Kenya" },
+    { lat: 30.0444, lng: 31.2357, name: "Le Caire", country: "Égypte" },
+    { lat: 33.9716, lng: -6.8498, name: "Rabat", country: "Maroc" },
+    { lat: 36.8065, lng: 10.1815, name: "Tunis", country: "Tunisie" },
+    { lat: 14.7167, lng: -17.4677, name: "Dakar", country: "Sénégal" },
+    { lat: 6.5244, lng: 3.3792, name: "Lagos", country: "Nigeria" },
+
+    // ═══ OCÉANIE ═══
+    { lat: -33.8688, lng: 151.2093, name: "Sydney", country: "Australie" },
+    { lat: -37.8136, lng: 144.9631, name: "Melbourne", country: "Australie" },
+    { lat: -36.8485, lng: 174.7633, name: "Auckland", country: "Nouvelle-Zélande" },
+];
+
+/**
+ * Returns `count` random, unique locations from the pool.
+ */
+function pickRandomLocations(count) {
+    const shuffled = [...LOCATIONS].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+}

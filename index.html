@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoExplorer — Devine ta position dans le monde</title>
+    <meta name="description" content="Jeu de géographie interactif inspiré de GeoGuessr. Explore le monde en vue street-level et devine ta position sur la carte !">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- ═══════════ HOME VIEW ═══════════ -->
+    <div id="home-view" class="view active">
+        <div class="particles" id="particles"></div>
+        <div class="home-container">
+            <div class="logo-section">
+                <div class="globe-wrapper">
+                    <div class="globe-icon">🌍</div>
+                    <div class="globe-ring"></div>
+                </div>
+                <h1 class="title">GEO<span class="title-accent">EXPLORER</span></h1>
+                <p class="subtitle">Devine ta position dans le monde</p>
+            </div>
+            <div class="home-actions">
+                <button id="btn-play" class="btn btn-primary btn-glow">
+                    <span class="btn-icon">▶</span> JOUER SOLO
+                </button>
+                <button id="btn-play-online" class="btn btn-secondary btn-online">
+                    <span class="btn-icon">🌐</span> JOUER EN LIGNE
+                </button>
+                <button id="btn-leaderboard" class="btn btn-secondary">
+                    <span class="btn-icon">🏆</span> CLASSEMENT
+                </button>
+                <button id="btn-settings" class="btn btn-ghost">
+                    <span class="btn-icon">⚙️</span> PARAMÈTRES
+                </button>
+            </div>
+            <div class="home-rules">
+                <h3>Comment jouer ?</h3>
+                <div class="rules-grid">
+                    <div class="rule-item">
+                        <span class="rule-number">1</span>
+                        <p>Explore la vue street-level et cherche des indices</p>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-number">2</span>
+                        <p>Place ton estimation sur la carte du monde</p>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-number">3</span>
+                        <p>Gagne jusqu'à 5 000 points par manche</p>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-number">4</span>
+                        <p>5 manches — Score max : 25 000 points</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ SETTINGS VIEW ═══════════ -->
+    <div id="settings-view" class="view">
+        <div class="panel-container">
+            <button class="btn-back" id="btn-back-settings">← Retour</button>
+            <div class="glass-panel settings-panel">
+                <h2>⚙️ Paramètres</h2>
+                <div class="setting-group">
+                    <label for="mapillary-token">Clé API Mapillary</label>
+                    <p class="setting-description">
+                        Créez un compte gratuit sur
+                        <a href="https://www.mapillary.com/developer" target="_blank" rel="noopener">mapillary.com/developer</a>,
+                        puis récupérez votre <strong>Client Token</strong> dans les paramètres développeur.
+                    </p>
+                    <div class="input-group">
+                        <input type="text" id="mapillary-token" placeholder="Collez votre Client Token ici..." autocomplete="off">
+                        <button id="btn-save-token" class="btn btn-primary">Sauvegarder</button>
+                    </div>
+                    <div id="token-status" class="token-status"></div>
+                </div>
+                <div class="divider"></div>
+                <div class="setting-group">
+                    <label for="timer-duration">Durée du timer (secondes)</label>
+                    <p class="setting-description">Temps disponible par manche pour explorer et placer ton estimation.</p>
+                    <div class="input-group">
+                        <input type="number" id="timer-duration" value="120" min="30" max="600" step="10">
+                        <button id="btn-save-timer" class="btn btn-primary">Sauvegarder</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ GAME VIEW ═══════════ -->
+    <div id="game-view" class="view">
+        <!-- Mapillary Street-level viewer (fills viewport) -->
+        <div id="streetview-container"></div>
+
+        <!-- Game HUD Overlay -->
+        <div class="game-hud">
+            <div class="hud-top-left">
+                <div class="round-badge">
+                    <span class="round-label">MANCHE</span>
+                    <span class="round-numbers"><span id="current-round">1</span>/<span id="total-rounds">5</span></span>
+                </div>
+            </div>
+            <div class="hud-top-center">
+                <div class="timer-container">
+                    <div class="timer-bar-bg">
+                        <div class="timer-bar" id="timer-bar"></div>
+                    </div>
+                    <span class="timer-text" id="timer-text">2:00</span>
+                </div>
+            </div>
+            <div class="hud-top-right">
+                <div class="score-badge">
+                    <span class="score-label">SCORE</span>
+                    <span class="score-numbers" id="hud-score">0</span>
+                </div>
+                <div class="guess-status" id="multi-guess-status"></div>
+            </div>
+        </div>
+
+        <!-- Mini Map Backdrop (for expanded state) -->
+        <div class="minimap-backdrop" id="minimap-backdrop"></div>
+
+        <!-- Mini Map (bottom-right, expands to center on click) -->
+        <div class="minimap-wrapper" id="minimap-wrapper">
+            <div class="minimap-header" id="minimap-toggle">
+                <span>🗺️ Carte</span>
+                <span class="minimap-expand-icon" id="minimap-expand-icon">▲</span>
+            </div>
+            <div class="minimap-body" id="minimap-body">
+                <div id="minimap"></div>
+                <button id="btn-confirm-guess" class="btn btn-confirm" disabled>
+                    ✓ Confirmer ma position
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p class="loading-text">Chargement de la localisation...</p>
+                <p class="loading-sub" id="loading-sub"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ ROUND RESULT VIEW ═══════════ -->
+    <div id="round-result-view" class="view">
+        <div class="result-container">
+            <div class="result-map-container">
+                <div id="result-map"></div>
+            </div>
+            <div class="result-panel glass-panel">
+                <h2 class="result-title" id="result-location-name">Paris, France</h2>
+                <div class="result-stats">
+                    <div class="stat-card">
+                        <span class="stat-icon">📏</span>
+                        <span class="stat-label">Distance</span>
+                        <span class="stat-value" id="result-distance">0 km</span>
+                    </div>
+                    <div class="stat-card stat-card-score">
+                        <span class="stat-icon">⭐</span>
+                        <span class="stat-label">Score</span>
+                        <span class="stat-value score-value" id="result-score">0</span>
+                    </div>
+                </div>
+                <div class="rounds-progress" id="rounds-dots"></div>
+                <button id="btn-next-round" class="btn btn-primary btn-glow">
+                    Manche suivante →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ FINAL RESULT VIEW ═══════════ -->
+    <div id="final-result-view" class="view">
+        <div class="panel-container">
+            <div class="glass-panel final-panel">
+                <div class="final-header">
+                    <span class="final-emoji">🎉</span>
+                    <h2>Partie terminée !</h2>
+                </div>
+                <div class="final-score-display">
+                    <span class="final-score-label">Score total</span>
+                    <span class="final-score-number" id="final-total-score">0</span>
+                    <span class="final-score-max">/ 25 000</span>
+                </div>
+                <div class="final-score-bar-container">
+                    <div class="final-score-bar" id="final-score-bar"></div>
+                </div>
+                <div class="final-rounds-breakdown" id="final-rounds-breakdown"></div>
+                <div class="divider"></div>
+                <div class="name-input-section">
+                    <label for="player-name">Ton pseudo pour le classement</label>
+                    <div class="input-group">
+                        <input type="text" id="player-name" placeholder="Entre ton pseudo..." maxlength="20">
+                        <button id="btn-save-score" class="btn btn-primary">Enregistrer</button>
+                    </div>
+                    <div id="save-status" class="token-status"></div>
+                </div>
+                <div class="final-actions">
+                    <button id="btn-play-again" class="btn btn-primary btn-glow">
+                        🔄 Rejouer
+                    </button>
+                    <button id="btn-final-leaderboard" class="btn btn-secondary">
+                        🏆 Classement
+                    </button>
+                    <button id="btn-final-home" class="btn btn-ghost">
+                        🏠 Accueil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ LEADERBOARD VIEW ═══════════ -->
+    <div id="leaderboard-view" class="view">
+        <div class="panel-container">
+            <button class="btn-back" id="btn-back-leaderboard">← Retour</button>
+            <div class="glass-panel leaderboard-panel">
+                <h2>🏆 Classement</h2>
+                <div class="leaderboard-table-wrapper">
+                    <table class="leaderboard-table" id="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th class="col-rank">#</th>
+                                <th class="col-name">Joueur</th>
+                                <th class="col-score">Score</th>
+                                <th class="col-date">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body"></tbody>
+                    </table>
+                    <div class="leaderboard-empty" id="leaderboard-empty" style="display:none;">
+                        <span class="empty-icon">🏜️</span>
+                        <p>Aucun score enregistré.</p>
+                        <p class="empty-sub">Joue une partie pour apparaître ici !</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ MULTIPLAYER MENU VIEW ═══════════ -->
+    <div id="multiplayer-menu-view" class="view">
+        <div class="panel-container">
+            <button class="btn-back" id="btn-back-multi-menu">← Retour</button>
+            <div class="glass-panel">
+                <h2>🌐 Jouer en ligne</h2>
+                <div class="setting-group">
+                    <label for="multi-player-name">Ton pseudo</label>
+                    <input type="text" id="multi-player-name" class="input-full" placeholder="Entre ton pseudo..." maxlength="20">
+                </div>
+                <div class="multi-actions">
+                    <button id="btn-create-lobby" class="btn btn-primary btn-glow">
+                        ➕ Créer un lobby
+                    </button>
+                    <div class="divider-text"><span>ou</span></div>
+                    <label for="join-code" style="font-weight:600;font-size:0.9rem;">Rejoindre un lobby</label>
+                    <div class="input-group">
+                        <input type="text" id="join-code" placeholder="Code du lobby (ex: A7K2X)" maxlength="5" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:700;">
+                        <button id="btn-join-lobby" class="btn btn-primary">Rejoindre</button>
+                    </div>
+                    <div id="join-error" class="token-status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ LOBBY VIEW ═══════════ -->
+    <div id="lobby-view" class="view">
+        <div class="panel-container">
+            <button class="btn-back" id="btn-leave-lobby">← Quitter</button>
+            <div class="glass-panel lobby-panel">
+                <h2>🎮 Salle d'attente</h2>
+                <div class="lobby-code-section">
+                    <span class="lobby-code-label">Code du lobby</span>
+                    <span class="lobby-code" id="lobby-code-display">-----</span>
+                    <button class="btn btn-ghost btn-copy" id="btn-copy-code" title="Copier">📋</button>
+                </div>
+                <div class="lobby-players-section">
+                    <div class="lobby-players-header">
+                        <span>Joueurs</span>
+                        <span id="lobby-player-count">0/4</span>
+                    </div>
+                    <div class="lobby-player-list" id="lobby-player-list"></div>
+                </div>
+                <button id="btn-start-game" class="btn btn-primary btn-glow" style="width:100%;margin-top:20px;">
+                    🚀 Lancer la partie
+                </button>
+                <p class="lobby-hint" id="lobby-hint">Partage le code à tes amis pour qu'ils rejoignent !</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ MULTI ROUND RESULT VIEW ═══════════ -->
+    <div id="multi-round-result-view" class="view">
+        <div class="result-container">
+            <div class="result-map-container">
+                <div id="multi-result-map"></div>
+            </div>
+            <div class="result-panel glass-panel multi-result-panel">
+                <div class="multi-result-header">
+                    <span id="multi-result-round">Manche 1/5</span>
+                    <h2 class="result-title" id="multi-result-location">Paris, France</h2>
+                </div>
+                <div class="leaderboard-table-wrapper" style="max-height:200px;">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th class="col-rank">#</th>
+                                <th>Joueur</th>
+                                <th>Distance</th>
+                                <th class="col-score">Manche</th>
+                                <th class="col-score">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="multi-result-tbody"></tbody>
+                    </table>
+                </div>
+                <button id="btn-multi-next-round" class="btn btn-primary btn-glow" style="width:100%;margin-top:16px;">
+                    Manche suivante →
+                </button>
+                <p class="lobby-hint" id="multi-waiting-host" style="display:none;">En attente de l'hôte...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ MULTI FINAL VIEW ═══════════ -->
+    <div id="multi-final-view" class="view">
+        <div class="panel-container">
+            <div class="glass-panel final-panel">
+                <div class="final-header">
+                    <span class="final-emoji">🏆</span>
+                    <h2>Résultats finaux</h2>
+                </div>
+                <div class="multi-podium" id="multi-podium"></div>
+                <div class="divider"></div>
+                <div class="final-rounds-breakdown" id="multi-final-breakdown"></div>
+                <div class="final-actions" style="margin-top:24px;">
+                    <button id="btn-multi-replay" class="btn btn-primary btn-glow">
+                        🔄 Rejouer
+                    </button>
+                    <button id="btn-multi-home" class="btn btn-ghost">
+                        🏠 Accueil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/locations.js"></script>
+    <script src="js/streetview.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/multiplayer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
