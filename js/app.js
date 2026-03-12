@@ -14,9 +14,9 @@ const App = (() => {
         // Particle background
         createParticles();
 
-        // Load saved settings
-        const savedToken = localStorage.getItem('mapillary_token') || '';
-        document.getElementById('mapillary-token').value = savedToken;
+        // We no longer read Mapillary token from localStorage as we use a default key
+        // const savedToken = localStorage.getItem('mapillary_token') || '';
+        // document.getElementById('mapillary-token')?.value = savedToken;
         const savedTimer = localStorage.getItem('geo_timer') || '120';
         document.getElementById('timer-duration').value = savedTimer;
         const savedName = localStorage.getItem('geo_player_name') || '';
@@ -28,12 +28,6 @@ const App = (() => {
 
         // Solo play
         document.getElementById('btn-play').addEventListener('click', () => {
-            const token = localStorage.getItem('mapillary_token');
-            if (!token) {
-                showView('settings-view');
-                showTokenStatus('Veuillez entrer votre token Mapillary pour jouer.', 'error');
-                return;
-            }
             showView('game-view');
             GuessMap.initMinimap('minimap', () => {
                 document.getElementById('btn-confirm-guess').disabled = false;
@@ -43,12 +37,6 @@ const App = (() => {
 
         // Online play
         document.getElementById('btn-play-online').addEventListener('click', () => {
-            const token = localStorage.getItem('mapillary_token');
-            if (!token) {
-                showView('settings-view');
-                showTokenStatus('Veuillez entrer votre token Mapillary pour jouer.', 'error');
-                return;
-            }
             showView('multiplayer-menu-view');
         });
 
@@ -69,19 +57,7 @@ const App = (() => {
             showView('home-view');
         });
 
-        // ══════════════════════════════
-        //  SETTINGS
-        // ══════════════════════════════
-
-        document.getElementById('btn-save-token').addEventListener('click', () => {
-            const token = document.getElementById('mapillary-token').value.trim();
-            if (!token) {
-                showTokenStatus('Le token ne peut pas être vide.', 'error');
-                return;
-            }
-            localStorage.setItem('mapillary_token', token);
-            showTokenStatus('Token sauvegardé avec succès !', 'success');
-        });
+        // Settings handlers (Mapillary removed, Timer remaining)
 
         document.getElementById('btn-save-timer').addEventListener('click', () => {
             const val = parseInt(document.getElementById('timer-duration').value);

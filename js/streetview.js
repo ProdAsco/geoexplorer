@@ -4,13 +4,13 @@
  */
 const StreetView = (() => {
     let viewer = null;
-    let accessToken = '';
+    let accessToken = 'MLY|34234322626211626|dd647aaf2301c71a0eacd7ef22cf5c60';
 
     /**
      * Initialize the Mapillary viewer instance.
      */
     function init(containerId, token) {
-        accessToken = token;
+        if (token) accessToken = token; // Allow override, but use default otherwise
         // We don't create the viewer until we have an image ID
     }
 
