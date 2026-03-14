@@ -10,9 +10,12 @@ const App = (() => {
         if (view) view.classList.add('active');
     }
 
-    function init() {
         // Particle background
         createParticles();
+
+        // Initialize I18n
+        if (window.applyTranslations) window.applyTranslations();
+        updateLangButtons();
 
         // We no longer read Mapillary token from localStorage as we use a default key
         // const savedToken = localStorage.getItem('mapillary_token') || '';
@@ -26,8 +29,8 @@ const App = (() => {
         const savedTheme = localStorage.getItem('geo_theme') || 'dark';
         if (savedTheme === 'light') {
             document.body.classList.add('theme-light');
-            document.getElementById('btn-toggle-theme').textContent = 'Basculer le thème (Actuel : Clair)';
         }
+        updateThemeButton();
 
         // ══════════════════════════════
         //  NAVIGATION
@@ -81,7 +84,7 @@ const App = (() => {
                 const isLight = document.body.classList.toggle('theme-light');
                 const newTheme = isLight ? 'light' : 'dark';
                 localStorage.setItem('geo_theme', newTheme);
-                btnTheme.textContent = 'Basculer le thème (Actuel : ' + (isLight ? 'Clair' : 'Sombre') + ')';
+                updateThemeButton();
                 
                 // Refresh map tiles if possible
                 if (window.GuessMap) GuessMap.refreshMinimap();
@@ -238,19 +241,20 @@ const App = (() => {
             Multiplayer.leaveLobby();
             showView('home-view');
         });
-    }
-
     function resetFinalView() {
         document.getElementById('player-name').value = '';
-        document.getElementById('save-status').textContent = '';
+        const savedStatus = document.getElementById('save-status');
+        if (savedStatus) savedStatus.textContent = '';
         document.getElementById('btn-save-score').disabled = false;
         document.getElementById('final-score-bar').style.width = '0%';
     }
 
     function showTokenStatus(msg, type) {
-        const el = document.getElementById('token-status');
-        el.textContent = msg;
-        el.className = 'token-status ' + type;
+        const el = document.getElementById('save-status') || document.getElementById('join-error');
+        if (el) {
+            el.textContent = msg;
+            el.className = 'token-status ' + type;
+        }
     }
 
     function createParticles() {
@@ -268,7 +272,27 @@ const App = (() => {
         }
     }
 
-    return { showView, init };
+    function updateThemeButton() {
+        const btnTheme = document.getElementById('btn-toggle-theme');
+        if (btnTheme) {
+            const isLight = document.body.classList.contains('theme-light');
+            const themeName = isLight ? (window.getCurrentLang() === 'fr' ? 'Clair' : 'Light') : (window.getCurrentLang() === 'fr' ? 'Sombre' : 'Dark');
+            btnTheme.setAttribute('data-i18n-vars', JSON.stringify({ theme: themeName }));
+            if (window.applyTranslations) window.applyTranslations();
+        }
+    }
+
+    function updateLangButtons() {
+        if (!window.getCurrentLang) return;
+        const lang = window.getCurrentLang();
+        document.querySelectorAll('.btn-lang').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const activeBtn = document.getElementById('btn-lang-' + lang);
+        if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    return { showView, init, updateThemeButton, updateLangButtons };
 })();
 
 // Start the app
