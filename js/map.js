@@ -21,6 +21,12 @@ const GuessMap = (() => {
         iconAnchor: [10, 10],
     });
 
+    // Helper to get correct tile URL based on theme
+    window.getTileUrl = function() {
+        const style = document.body.classList.contains('theme-light') ? 'light_all' : 'dark_all';
+        return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`;
+    };
+
     function initMinimap(containerId, callback) {
         onGuessPlaced = callback;
         if (minimap) { minimap.remove(); minimap = null; }
@@ -30,7 +36,7 @@ const GuessMap = (() => {
             zoomControl: true, attributionControl: false, worldCopyJump: true,
         });
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer(getTileUrl(), {
             subdomains: 'abcd', maxZoom: 19,
         }).addTo(minimap);
 
@@ -67,7 +73,7 @@ const GuessMap = (() => {
             zoomControl: true, attributionControl: false,
         });
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer(getTileUrl(), {
             subdomains: 'abcd', maxZoom: 19,
         }).addTo(resultMap);
 

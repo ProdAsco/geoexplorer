@@ -78,7 +78,7 @@ class Lobby {
     }
 
     addPlayer(socket, name) {
-        if (this.players.size >= 4) return false;
+        if (this.players.size >= 8) return false;
         if (this.status !== 'waiting') return false;
 
         this.players.set(socket.id, {
@@ -238,8 +238,8 @@ io.on('connection', (socket) => {
             callback({ success: false, error: 'La partie a déjà commencé.' });
             return;
         }
-        if (lobby.players.size >= 4) {
-            callback({ success: false, error: 'Le lobby est complet (4/4).' });
+        if (lobby.players.size >= 8) {
+            callback({ success: false, error: 'Le lobby est complet (8/8).' });
             return;
         }
 
@@ -392,6 +392,8 @@ function endRound(lobby) {
 
     const results = lobby.calculateRoundResults();
     io.to(lobby.code).emit('roundEnd', results);
+    // Emit updated player list to refresh live leaderboards on clients
+    io.to(lobby.code).emit('playerList', lobby.getPlayerList());
 }
 
 // ── Cleanup stale lobbies every 30 minutes ──

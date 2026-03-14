@@ -22,6 +22,13 @@ const App = (() => {
         const savedName = localStorage.getItem('geo_player_name') || '';
         document.getElementById('multi-player-name').value = savedName;
 
+        // Theme initialization
+        const savedTheme = localStorage.getItem('geo_theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('theme-light');
+            document.getElementById('btn-toggle-theme').textContent = 'Basculer le thème (Actuel : Clair)';
+        }
+
         // ══════════════════════════════
         //  NAVIGATION
         // ══════════════════════════════
@@ -66,6 +73,20 @@ const App = (() => {
                 showTokenStatus('Durée du timer mise à jour : ' + val + 's', 'success');
             }
         });
+
+        // Theme toggle
+        const btnTheme = document.getElementById('btn-toggle-theme');
+        if (btnTheme) {
+            btnTheme.addEventListener('click', () => {
+                const isLight = document.body.classList.toggle('theme-light');
+                const newTheme = isLight ? 'light' : 'dark';
+                localStorage.setItem('geo_theme', newTheme);
+                btnTheme.textContent = 'Basculer le thème (Actuel : ' + (isLight ? 'Clair' : 'Sombre') + ')';
+                
+                // Refresh map tiles if possible
+                if (window.GuessMap) GuessMap.refreshMinimap();
+            });
+        }
 
         // ══════════════════════════════
         //  GAME CONTROLS (solo + multi)

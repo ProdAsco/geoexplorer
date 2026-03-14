@@ -155,11 +155,37 @@ const Multiplayer = (() => {
                     'Erreur de chargement. Le round continue...';
             });
 
+        document.getElementById('live-leaderboard').style.display = 'block';
+
         // Timer will be synced by server via timerSync events
         multiTimerDuration = data.timerDuration;
     }
 
     let multiTimerDuration = 120;
+    
+    // Track if user has submitted
+    let roundSubmitted = false;
+    
+    // Update live leaderboard
+    function updateLiveLeaderboard(players) {
+        const list = document.getElementById('live-leaderboard-list');
+        if (!list) return;
+        
+        // Sort by total score descending
+        const sorted = [...players].sort((a, b) => b.totalScore - a.totalScore);
+        
+        list.innerHTML = '';
+        sorted.forEach((p, i) => {
+            const isSelf = socket && p.id === socket.id;
+            const li = document.createElement('li');
+            li.className = 'llb-item' + (isSelf ? ' is-self' : '');
+            li.innerHTML = `
+                <span class="llb-name">${i+1}. ${escapeHtml(p.name)}</span>
+                <span class="llb-score">${p.totalScore.toLocaleString('fr-FR')}</span>
+            `;
+            list.appendChild(li);
+        });
+    }
 
     function handleTimerSync(timeLeft) {
         const pct = (timeLeft / multiTimerDuration) * 100;
@@ -177,21 +203,37 @@ const Multiplayer = (() => {
             const s = timeLeft % 60;
             timerText.textContent = m + ':' + (s < 10 ? '0' : '') + s;
         }
+
+        // Auto-submit on expiration
+        if (timeLeft <= 0 && !roundSubmitted) {
+            submitGuess(true); // force auto-submit if a marker exists
+        }
     }
 
-    function submitGuess() {
+    function submitGuess(isAuto = false) {
         const guess = GuessMap.getGuess();
-        if (!guess) return;
-        socket.emit('submitGuess', { lat: guess.lat, lng: guess.lng });
+        roundSubmitted = true;
+        
+        if (guess) {
+            socket.emit('submitGuess', { lat: guess.lat, lng: guess.lng });
+            document.getElementById('btn-confirm-guess').textContent = '✓ Envoyé — en attente...';
+        } else {
+            // Send empty coordinates to signal round is over for them
+            socket.emit('submitGuess', { lat: 0, lng: 0 }); 
+            document.getElementById('btn-confirm-guess').textContent = '— Temps écoulé —';
+        }
+        
         // Disable further guessing
         document.getElementById('btn-confirm-guess').disabled = true;
-        document.getElementById('btn-confirm-guess').textContent = '✓ Envoyé — en attente...';
     }
 
     function handleRoundEnd(results) {
         StreetView.destroy();
         App.showView('multi-round-result-view');
-
+        
+        // Reset submittal status
+        roundSubmitted = false;
+        
         // Location name
         document.getElementById('multi-result-location').textContent =
             results.location.name + ', ' + results.location.country;
@@ -247,7 +289,7 @@ const Multiplayer = (() => {
 
         const map = L.map(container, { zoomControl: true, attributionControl: false });
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        L.tileLayer(getTileUrl(), {
             subdomains: 'abcd', maxZoom: 19,
         }).addTo(map);
 
@@ -262,7 +304,9 @@ const Multiplayer = (() => {
                 html: '<div style="width:22px;height:22px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px rgba(239,68,68,0.6)"></div>',
                 iconSize: [22, 22], iconAnchor: [11, 11],
             })
-        }).addTo(map).bindPopup('<strong>' + loc.name + '</strong><br>Position réelle');
+        }).addTo(map).bindTooltip('<strong>' + loc.name + '</strong><br>Position réelle', { 
+            direction: 'top', className: 'player-tooltip', permanent: false 
+        });
 
         // Player guesses
         results.players.forEach((p, i) => {
@@ -276,7 +320,9 @@ const Multiplayer = (() => {
                     html: '<div style="width:18px;height:18px;background:' + color + ';border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px ' + color + '80"></div>',
                     iconSize: [18, 18], iconAnchor: [9, 9],
                 })
-            }).addTo(map).bindPopup(escapeHtml(p.playerName) + ' — ' + p.score + ' pts');
+            }).addTo(map).bindTooltip('<strong>' + escapeHtml(p.playerName) + '</strong><br>' + p.score + ' pts', { 
+                permanent: true, direction: 'top', className: 'player-tooltip', offset: [0, -10]
+            });
 
             L.polyline([[loc.lat, loc.lng], [p.guessLat, p.guessLng]], {
                 color: color, weight: 2, dashArray: '6, 6', opacity: 0.7,
@@ -367,9 +413,12 @@ const Multiplayer = (() => {
             list.appendChild(div);
         });
 
+        // Update live leaderboard
+        updateLiveLeaderboard(players);
+
         // Update player count
         const countEl = document.getElementById('lobby-player-count');
-        if (countEl) countEl.textContent = players.length + '/4';
+        if (countEl) countEl.textContent = players.length + '/8';
     }
 
     function escapeHtml(s) {

@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link id="theme-stylesheet" rel="stylesheet" href="css/style.css">
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GZX947131W"></script>
@@ -91,6 +91,14 @@
                         <button id="btn-save-timer" class="btn btn-primary">Sauvegarder</button>
                     </div>
                 </div>
+
+                <div class="setting-group">
+                    <label>Thème visuel</label>
+                    <p class="setting-description">Bascule entre le mode Sombre et le mode Clair.</p>
+                    <button id="btn-toggle-theme" class="btn btn-secondary" style="width: 100%;">
+                        Basculer le thème (Actuel : Sombre)
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -106,6 +114,14 @@
                 <div class="round-badge">
                     <span class="round-label">MANCHE</span>
                     <span class="round-numbers"><span id="current-round">1</span>/<span id="total-rounds">5</span></span>
+                </div>
+                
+                <!-- 🌐 Live Leaderboard (Multiplayer Only) -->
+                <div class="live-leaderboard" id="live-leaderboard" style="display: none;">
+                    <div class="llb-header">Classement en direct</div>
+                    <ul class="llb-list" id="live-leaderboard-list">
+                        <!-- Players injected here via JS -->
+                    </ul>
                 </div>
             </div>
             <div class="hud-top-center">
@@ -289,7 +305,7 @@
                 <div class="lobby-players-section">
                     <div class="lobby-players-header">
                         <span>Joueurs</span>
-                        <span id="lobby-player-count">0/4</span>
+                        <span id="lobby-player-count">0/8</span>
                     </div>
                     <div class="lobby-player-list" id="lobby-player-list"></div>
                 </div>
