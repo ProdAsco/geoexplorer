@@ -406,6 +406,6 @@ setInterval(() => {
 }, 30 * 60 * 1000);
 
 // ── Start server ──
-server.listen(PORT, () => {
-    console.log(`\n  🌍 GeoExplorer server running on http://localhost:${PORT}\n`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n  🌍 GeoExplorer server running on port ${PORT}\n`);
 });
