@@ -10,6 +10,7 @@ const App = (() => {
         if (view) view.classList.add('active');
     }
 
+    function init() {
         // Particle background
         createParticles();
 
@@ -31,6 +32,9 @@ const App = (() => {
             document.body.classList.add('theme-light');
         }
         updateThemeButton();
+
+        // Initialize Supabase
+        if (window.SupabaseClient) SupabaseClient.init();
 
         // ══════════════════════════════
         //  NAVIGATION
@@ -143,6 +147,13 @@ const App = (() => {
             document.getElementById('save-status').textContent = 'Score enregistré !';
             document.getElementById('save-status').className = 'token-status success';
             document.getElementById('btn-save-score').disabled = true;
+
+            // Process ranked game if logged in
+            if (SupabaseClient.isLoggedIn()) {
+                Ranked.processGameResult(Game.totalScore()).then(result => {
+                    if (result) Ranked.showRankedResult(result);
+                });
+            }
         });
 
         document.getElementById('btn-play-again').addEventListener('click', () => {
@@ -241,6 +252,98 @@ const App = (() => {
             Multiplayer.leaveLobby();
             showView('home-view');
         });
+
+        // ══════════════════════════════
+        //  AUTH / PROFILE / RANKED
+        // ══════════════════════════════
+
+        document.getElementById('btn-auth').addEventListener('click', () => {
+            showView('auth-view');
+        });
+
+        document.getElementById('btn-back-auth').addEventListener('click', () => {
+            showView('home-view');
+        });
+
+        document.getElementById('btn-profile').addEventListener('click', () => {
+            Ranked.renderProfile();
+            showView('profile-view');
+        });
+
+        document.getElementById('btn-back-profile').addEventListener('click', () => {
+            showView('home-view');
+        });
+
+        document.getElementById('btn-ranked-leaderboard').addEventListener('click', () => {
+            SupabaseClient.subscribeLeaderboard((players) => {
+                Ranked.renderLeaderboard(players);
+            });
+            showView('ranked-leaderboard-view');
+        });
+
+        document.getElementById('btn-back-ranked').addEventListener('click', () => {
+            SupabaseClient.unsubscribeLeaderboard();
+            showView('home-view');
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            await SupabaseClient.signOut();
+            showView('home-view');
+        });
+
+        // Auth forms
+        document.getElementById('auth-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('auth-error');
+            const successEl = document.getElementById('auth-success');
+
+            errorEl.textContent = '';
+            errorEl.className = 'token-status';
+            successEl.style.display = 'none';
+
+            const result = await SupabaseClient.signIn(email, password);
+            if (result.success) {
+                successEl.textContent = 'Connecté avec succès !';
+                successEl.style.display = 'block';
+                setTimeout(() => showView('home-view'), 1000);
+            } else {
+                errorEl.textContent = result.error;
+                errorEl.className = 'token-status error';
+            }
+        });
+
+        document.getElementById('auth-signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('signup-username').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+            const errorEl = document.getElementById('auth-error');
+            const successEl = document.getElementById('auth-success');
+
+            errorEl.textContent = '';
+            errorEl.className = 'token-status';
+            successEl.style.display = 'none';
+
+            if (!username) {
+                errorEl.textContent = 'Entre un pseudo !';
+                errorEl.className = 'token-status error';
+                return;
+            }
+
+            const result = await SupabaseClient.signUp(email, password, username);
+            if (result.success) {
+                successEl.textContent = 'Compte créé ! Tu es maintenant connecté.';
+                successEl.style.display = 'block';
+                setTimeout(() => showView('home-view'), 1500);
+            } else {
+                errorEl.textContent = result.error;
+                errorEl.className = 'token-status error';
+            }
+        });
+    }
+
     function resetFinalView() {
         document.getElementById('player-name').value = '';
         const savedStatus = document.getElementById('save-status');
