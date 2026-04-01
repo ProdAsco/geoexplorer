@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Basique Supabase</title>
+    <!-- Charger le code de Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="/env.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 40px; background-color: #f0f4f8; color: #333; }
+        .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+        input { padding: 10px; width: 100%; box-sizing: border-box; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 15px; background: #00ca9e; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+        button:hover { background: #00a382; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2 style="margin-top:0;">Test de Connexion Supabase</h2>
+        <p>Ce test vérifie si votre site web peut transmettre une donnée à votre base de données.</p>
+        
+        <label for="pseudo">Entrez un pseudo pour le test :</label>
+        <input type="text" id="pseudo" placeholder="Ex: Bob Le Bricoleur">
+        
+        <button onclick="testerSupabase()">C'EST PARTI !</button>
+        
+        <p id="resultat" style="margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 4px; display: none;"></p>
+    </div>
+
+    <script>
+        // Utilitaires d'affichage
+        function afficherErreur(msg) {
+            const div = document.getElementById('resultat');
+            div.style.display = "block";
+            div.style.backgroundColor = "#ffebee";
+            div.style.color = "#c62828";
+            div.textContent = msg;
+            console.error(msg);
+        }
+        function afficherMessage(msg, color) {
+            const div = document.getElementById('resultat');
+            div.style.display = "block";
+            div.style.backgroundColor = color === "green" ? "#e8f5e9" : "#e3f2fd";
+            div.style.color = color === "green" ? "#2e7d32" : "#1565c0";
+            div.textContent = msg;
+            console.log(msg);
+        }
+
+        // 1. Clés lues depuis /env.js (serveur Node)
+        var URL = window.ENV?.SUPABASE_URL;
+        var KEY = window.ENV?.SUPABASE_ANON_KEY;
+        if (!URL || !KEY) {
+            afficherErreur('Clés Supabase absentes — configure le fichier .env et relance le serveur.');
+            return;
+        }
+
+        // 2. Initialisation du client
+        var supabase = null;
+        setTimeout(function() {
+            try {
+                if (!window.supabase) {
+                    afficherErreur("La bibliothèque Supabase n'a pas pu se charger depuis Internet. Désactivez votre bloqueur de pub ou vérifiez votre connexion.");
+                    return;
+                }
+                supabase = window.supabase.createClient(URL, KEY);
+                console.log("Supabase initialisé !");
+            } catch (e) {
+                afficherErreur("Erreur système lors de l'initialisation de Supabase : " + e.message);
+            }
+        }, 500);
+
+        // 3. Fonction pour ajouter la ligne
+        window.testerSupabase = async function() {
+            const pseudo = document.getElementById('pseudo').value.trim();
+            if (!pseudo) return afficherErreur("Veuillez entrer un pseudo !");
+            
+            afficherMessage("⏳ Tentative d'insertion dans Supabase...", "blue");
+
+            if (!supabase) return afficherErreur("Impossible de contacter Supabase. L'initialisation a échoué.");
+
+            // Insertion dans la table de test
+            const { error } = await supabase
+                .from('test_table')
+                .insert([{ pseudo: pseudo }]);
+
+            if (error) {
+                afficherErreur("ERREUR (" + error.code + ") : " + error.message);
+            } else {
+                afficherMessage("✅ SUCCÈS IMMENSE ! Le pseudo '" + pseudo + "' a été inséré dans votre base de données Supabase !", "green");
+            }
+        };
+    </script>
+</body>
+</html>

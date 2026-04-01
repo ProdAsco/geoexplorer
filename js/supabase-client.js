@@ -2,31 +2,43 @@
  * GeoExplorer — Supabase Client (Auth + Database)
  */
 const SupabaseClient = (() => {
-    const SUPABASE_URL = 'https://satquqrqmtggoqhbiotg.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhdHF1cXJxbXRnZ29xaGJpb3RnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4Mjg3NTQsImV4cCI6MjA4OTQwNDc1NH0.jA4T_cTpisxXxnTuK4AN8jQxJwJiU5pBvpfAD4nZeNk';
-
     let supabase = null;
     let currentUser = null;
     let currentProfile = null;
 
     function init() {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Read keys here to ensure /env.js has loaded
+        const url = window.ENV?.SUPABASE_URL;
+        const key = window.ENV?.SUPABASE_ANON_KEY;
 
-        // Listen for auth state changes
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session?.user) {
-                currentUser = session.user;
-                await loadProfile();
-                updateAuthUI(true);
-            } else {
-                currentUser = null;
-                currentProfile = null;
-                updateAuthUI(false);
-            }
-        });
+        if (!url || !key) {
+            console.error('Supabase configuration manquante — vérifie le fichier .env et relance le serveur.');
+            return;
+        }
 
-        // Check existing session
-        checkSession();
+        try {
+            supabase = window.supabase.createClient(url, key);
+            console.log("Supabase initialisé avec succès !");
+
+            // Listen for auth state changes
+            supabase.auth.onAuthStateChange(async (event, session) => {
+                if (session?.user) {
+                    currentUser = session.user;
+                    await loadProfile();
+                    updateAuthUI(true);
+                } else {
+                    currentUser = null;
+                    currentProfile = null;
+                    updateAuthUI(false);
+                }
+            });
+
+            // Check existing session
+            checkSession();
+        } catch (err) {
+            console.error('Error initializing Supabase:', err);
+            supabase = null;
+        }
     }
 
     async function checkSession() {
@@ -40,6 +52,9 @@ const SupabaseClient = (() => {
 
     // ── Authentication ──
     async function signUp(email, password, username) {
+        if (!supabase) {
+            return { success: false, error: 'Client Supabase non initialisé. Vérifiez votre configuration.' };
+        }
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -74,6 +89,9 @@ const SupabaseClient = (() => {
     }
 
     async function signIn(email, password) {
+        if (!supabase) {
+            return { success: false, error: 'Client Supabase non initialisé. Vérifiez votre configuration.' };
+        }
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password

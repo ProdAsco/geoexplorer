@@ -2,6 +2,7 @@
  * GeoExplorer — Multiplayer Server
  * Express + Socket.io — Lobby system with synchronized gameplay
  */
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -19,6 +20,16 @@ const PORT = process.env.PORT || 3000;
 
 // ── Serve static files ──
 app.use(express.static(path.join(__dirname)));
+
+// ── Serve environment variables to frontend ──
+app.get('/env.js', (req, res) => {
+    const envVars = {
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY
+    };
+    res.type('application/javascript');
+    res.send(`window.ENV = ${JSON.stringify(envVars)};`);
+});
 
 // ── Lobby Storage ──
 const lobbies = new Map();

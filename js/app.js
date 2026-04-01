@@ -34,7 +34,11 @@ const App = (() => {
         updateThemeButton();
 
         // Initialize Supabase
-        if (window.SupabaseClient) SupabaseClient.init();
+        try {
+            if (typeof SupabaseClient !== 'undefined') SupabaseClient.init();
+        } catch (err) {
+            console.error('Supabase init error:', err);
+        }
 
         // ══════════════════════════════
         //  NAVIGATION
@@ -293,53 +297,83 @@ const App = (() => {
 
         // Auth forms
         document.getElementById('auth-login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+            if (e) e.preventDefault();
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             const errorEl = document.getElementById('auth-error');
             const successEl = document.getElementById('auth-success');
 
-            errorEl.textContent = '';
-            errorEl.className = 'token-status';
-            successEl.style.display = 'none';
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.className = 'token-status';
+            }
+            if (successEl) successEl.style.display = 'none';
 
-            const result = await SupabaseClient.signIn(email, password);
-            if (result.success) {
-                successEl.textContent = 'Connecté avec succès !';
-                successEl.style.display = 'block';
-                setTimeout(() => showView('home-view'), 1000);
-            } else {
-                errorEl.textContent = result.error;
-                errorEl.className = 'token-status error';
+            try {
+                const result = await SupabaseClient.signIn(email, password);
+                if (result.success) {
+                    if (successEl) {
+                        successEl.textContent = 'Connecté avec succès !';
+                        successEl.style.display = 'block';
+                    }
+                    setTimeout(() => showView('home-view'), 1000);
+                } else {
+                    if (errorEl) {
+                        errorEl.textContent = result.error;
+                        errorEl.className = 'token-status error';
+                    }
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+                if (errorEl) {
+                    errorEl.textContent = 'Une erreur est survenue lors de la connexion.';
+                    errorEl.className = 'token-status error';
+                }
             }
         });
 
         document.getElementById('auth-signup-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+            if (e) e.preventDefault();
             const username = document.getElementById('signup-username').value.trim();
             const email = document.getElementById('signup-email').value.trim();
             const password = document.getElementById('signup-password').value;
             const errorEl = document.getElementById('auth-error');
             const successEl = document.getElementById('auth-success');
 
-            errorEl.textContent = '';
-            errorEl.className = 'token-status';
-            successEl.style.display = 'none';
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.className = 'token-status';
+            }
+            if (successEl) successEl.style.display = 'none';
 
             if (!username) {
-                errorEl.textContent = 'Entre un pseudo !';
-                errorEl.className = 'token-status error';
+                if (errorEl) {
+                    errorEl.textContent = 'Entre un pseudo !';
+                    errorEl.className = 'token-status error';
+                }
                 return;
             }
 
-            const result = await SupabaseClient.signUp(email, password, username);
-            if (result.success) {
-                successEl.textContent = 'Compte créé ! Tu es maintenant connecté.';
-                successEl.style.display = 'block';
-                setTimeout(() => showView('home-view'), 1500);
-            } else {
-                errorEl.textContent = result.error;
-                errorEl.className = 'token-status error';
+            try {
+                const result = await SupabaseClient.signUp(email, password, username);
+                if (result.success) {
+                    if (successEl) {
+                        successEl.textContent = 'Compte créé ! Tu es maintenant connecté.';
+                        successEl.style.display = 'block';
+                    }
+                    setTimeout(() => showView('home-view'), 1500);
+                } else {
+                    if (errorEl) {
+                        errorEl.textContent = result.error;
+                        errorEl.className = 'token-status error';
+                    }
+                }
+            } catch (err) {
+                console.error('Signup error:', err);
+                if (errorEl) {
+                    errorEl.textContent = 'Erreur d\'inscription : ' + err.message;
+                    errorEl.className = 'token-status error';
+                }
             }
         });
     }
